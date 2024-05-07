@@ -62,7 +62,6 @@ func listobject(name string) ([]byte, error) {
 
 			equipmentJSON, err := json.Marshal(eq)
 			if err != nil {
-				//http.Error(w, "Failed to marshal equipment data", http.StatusInternalServerError)
 				return nil, err
 			}
 			fmt.Println("calling list-------------------listing return")
@@ -85,6 +84,41 @@ func (sh *SmartHub) DeleteEquipment(name string) {
 		}
 	}
 	fmt.Println("Equipment not found:", name)
+}
+func updateStatus(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+
+	for i, eq := range hub.Equipment {
+		if eq.Name == name {
+			if eq.Status == false {
+				hub.Equipment[i].SwitchOn()
+			} else if eq.Status == true {
+				hub.Equipment[i].SwitchOff()
+			}
+			saveData()
+			fmt.Fprintf(w, "Status of %s updated to %t", name, !eq.Status)
+			return
+		}
+	}
+	http.Error(w, "Equipment not found", http.StatusNotFound)
+}
+
+func updateConnect(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+
+	for i, eq := range hub.Equipment {
+		if eq.Name == name {
+			if eq.Connection == false {
+				hub.Equipment[i].Connect()
+			} else if eq.Connection == true {
+				hub.Equipment[i].Disconnect()
+			}
+			saveData()
+			fmt.Fprintf(w, "Status of %s updated to %t", name, !eq.Connection)
+			return
+		}
+	}
+	http.Error(w, "Equipment not found", http.StatusNotFound)
 }
 
 func createEquipment(w http.ResponseWriter, r *http.Request) {
@@ -141,32 +175,10 @@ func listEquipment(w http.ResponseWriter, r *http.Request) {
 
 }
 
-/*
-	func listEquipment(w http.ResponseWriter, r *http.Request) {
-		// Check if the request is coming from an API request
-		if r != nil {
-			// API request
-			equipmentJSON, err := hub.listeq()
-			if err != nil {
-				http.Error(w, "Failed to list equipment", http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(equipmentJSON)
-		} else {
-			// Non-API request, print JSON data to terminal
-			fmt.Println("Equipment List:")
-			for _, eq := range hub.Equipment {
-				fmt.Printf("Name: %s, Type: %s, Location: %s, Connection: %t, Status: %t\n", eq.Name, eq.Type, eq.Location, eq.Connection, eq.Status)
-			}
-		}
-	}
-*/
 var hub SmartHub
 
 func saveData() {
-	file, err := os.Create("data.json")
+	file, err := os.Create("/data.json")
 	if err != nil {
 		fmt.Println("Error creating data.json:", err)
 		return
@@ -184,11 +196,11 @@ func saveData() {
 //here
 
 func main() {
-	_, err := os.Stat("data.json")
+	_, err := os.Stat("/data.json")
 	if os.IsNotExist(err) {
 		hub = SmartHub{Equipment: []SmartEquipment{}}
 	} else {
-		file, err := os.Open("data.json")
+		file, err := os.Open("/data.json")
 		if err != nil {
 			fmt.Println("Error opening data.json:", err)
 			return
@@ -202,11 +214,14 @@ func main() {
 			return
 		}
 	}
-
+	fmt.Println("check")
 	http.HandleFunc("/equipment/create", createEquipment)
 	http.HandleFunc("/equipment/delete", deleteEquipment)
 	http.HandleFunc("/equipment/list", listEquipment)
+	http.HandleFunc("/equipment/status", updateStatus)
+	http.HandleFunc("/equipment/connect", updateConnect)
 
 	fmt.Println("Server is running...")
-	http.ListenAndServe(":8077", nil)
+	http.ListenAndServe(":8022", nil)
 }
+
