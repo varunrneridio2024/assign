@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: new2
+  template:
+    metadata:
+      labels:
+        app: new2
+    spec:
+      containers:
+      - name: new2
+        image: varunr1/velero:goimg122
+        command: ["/main"]
+        ports:
+        - containerPort: 8022
+        securityContext:
+          runAsUser: 0
+
