@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: new2
-        image: varunr1/velero:goimg122
+        image: varunr1/smartapp:v1
         command: ["/main"]
         ports:
         - containerPort: 8022
